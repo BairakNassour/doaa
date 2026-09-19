@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- الطبقة الخارجية المسؤولة عن قص الحواف وتدويرها -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_rounded_bg"
+    android:clipToOutline="true">
+
+    <!-- الطبقة الداخلية التي نغير لونها من فلاتر وتأخذ انحناء الطبقة الخارجية تلقائياً -->
+    <LinearLayout
+        android:id="@+id/widget_background_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#0C261F"
+        android:orientation="horizontal"
+        android:padding="12dp" 
+        android:gravity="center_vertical">
+
+        <!-- شعار التطبيق (تم تصغيره قليلاً ليتناسق مع الخط) -->
+        <ImageView
+            android:id="@+id/widget_logo"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/logo" 
+            android:layout_marginEnd="12dp"
+            android:scaleType="fitCenter" />
+
+        <!-- النصوص الوسطى -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center_vertical|end"> 
+            
+            <!-- نص الاستمرارية (تم تصغير الخط إلى 14sp ليصبح أرتب) -->
+            <TextView
+                android:id="@+id/widget_rank"
+                android:layout_width="wrap_content" 
+                android:layout_height="wrap_content"
+                android:text="جارٍ التحميل..."
+                android:textColor="#FFFFFF" 
+                android:textSize="14sp" 
+                android:textStyle="bold"
+                android:gravity="right" 
+                android:textDirection="rtl" /> 
+
+        </LinearLayout>
+
+    </LinearLayout>
+</FrameLayout>
