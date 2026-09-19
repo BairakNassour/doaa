@@ -34,6 +34,9 @@
 	<string>نحتاج لتحديد موقعك لتحديد اتجاه القبلة وأوقات الصلاة</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>نحتاج للموقع لإرسال التنبيهات وإشعار الصلاة بدقة</string>
+	<!-- إذن الوصول لمكتبة الصور -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>نحتاج للوصول إلى معرض الصور لتمكينك من حفظ شارك الخلفيات والبطاقات الإسلامية.</string>
 
 	<!-- إذن تتبع الإعلانات (iOS 14.5+) -->
 	<key>NSUserTrackingUsageDescription</key>
