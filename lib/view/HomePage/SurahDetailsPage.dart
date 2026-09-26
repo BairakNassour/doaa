@@ -52,21 +52,21 @@ class _SurahDetailsPageState extends State<SurahDetailsPage> {
   bool _isLoading = true;
   BannerAd? _bannerAd;
   bool _isBannerAdLoaded = false;
-  
 
- @override
-void initState() {
-  super.initState();
-  _pageController = PageController();
-  _currentSurahNumber = widget.surahNumber;
-  _currentSurahName = widget.surahName;
-  _loadInitialData();
-  
-  // عدم تحميل الإعلان إلا إذا كانت الإعلانات مفعلة
-  if (isadactivitaed) {
-    _loadBannerAd();
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+    _currentSurahNumber = widget.surahNumber;
+    _currentSurahName = widget.surahName;
+    _loadInitialData();
+
+    // عدم تحميل الإعلان إلا إذا كانت الإعلانات مفعلة
+    if (isadactivitaed) {
+      _loadBannerAd();
+    }
   }
-}
+
   @override
   void dispose() {
     _bannerAd?.dispose();
@@ -284,17 +284,17 @@ void initState() {
       key: _scaffoldKey, // ربط المفتاح
       backgroundColor: _selectedBgColor,
       drawer: _buildQuranDrawer(),
-      bottomNavigationBar: (_isBannerAdLoaded && _bannerAd != null && !_isFullScreen)
+      bottomNavigationBar:
+          (_isBannerAdLoaded && _bannerAd != null && !_isFullScreen)
           ? SafeArea(
-            child: Container(
-                color: _selectedBgColor, // جعل لون خلفية الإعلان متناسقاً مع لون الصفحة
+              child: Container(
+                color:
+                    _selectedBgColor, // جعل لون خلفية الإعلان متناسقاً مع لون الصفحة
                 width: double.infinity,
                 height: _bannerAd!.size.height.toDouble(),
-                child: Center(
-                  child: AdWidget(ad: _bannerAd!),
-                ),
+                child: Center(child: AdWidget(ad: _bannerAd!)),
               ),
-          )
+            )
           : null,
       body: _isLoading
           ? Center(
@@ -307,7 +307,9 @@ void initState() {
                     children: [
                       // تم استبدال الـ AppBar بـ Indicator ليكون أكثر انسيابية
                       if (!_isFullScreen) ...[
-                        SizedBox(height: 10),
+                        SizedBox(
+                          height: 22,
+                        ), // زيادة بسيطة لضمان المحاذاة الراسية مع الأزرار الجانبية
                         SmoothPageIndicator(
                           controller: _pageController,
                           count: _sortedPageKeys.length,
@@ -318,6 +320,7 @@ void initState() {
                           ),
                         ),
                       ],
+
                       Expanded(
                         child: PageView.builder(
                           controller: _pageController,
@@ -332,46 +335,78 @@ void initState() {
                       ),
                     ],
                   ),
-                
 
-                  // أيقونة الفتح الجانبي (بديلة للـ AppBar)
+                  // أيقونة الفتح الجانبي (الموضوعة على اليمين)
                   if (!_isFullScreen)
-                    // ignore_for_file: prefer__ructors
                     Positioned(
                       top: 15,
-                      right: 5, // إبقاء المسافة القريبة "على الميني"
+                      right: 5,
                       child: GestureDetector(
                         onTap: () => _scaffoldKey.currentState?.openDrawer(),
                         child: AnimatedContainer(
-                          duration: Duration(milliseconds: 300),
-                          padding: EdgeInsets.all(5),
+                          duration: const Duration(milliseconds: 300),
+                          padding: const EdgeInsets.all(5),
                           decoration: BoxDecoration(
-                            color:
-                                _selectedBgColor, // نفس لون خلفية الصفحة (Opaque) لمنع تداخل الإطار
-                            shape: BoxShape.circle, // شكل دائري
+                            color: _selectedBgColor,
+                            shape: BoxShape.circle,
                             border: Border.all(
-                              // إضافة إطار رفيع جداً للتباين
                               color: _selectedBgColor.computeLuminance() < 0.5
                                   ? AppColors.accentGold.withOpacity(0.5)
                                   : Colors.brown[900]!.withOpacity(0.3),
                               width: 0.8,
                             ),
                             boxShadow: [
-                              // ظل خفيف جداً لإعطاء بعد للأيقونة
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.15),
                                 blurRadius: 5,
-                                offset: Offset(0, 2),
+                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
                           child: Icon(
                             Icons.menu_open_rounded,
-                            // لون الأيقونة بتباين عالٍ (ذهبي للداكن، بني للفاتح)
                             color: _selectedBgColor.computeLuminance() < 0.5
                                 ? AppColors.accentGold
                                 : Colors.brown[900],
-                            size: 26, // تقليل الحجم قليلاً ليتناسب مع الدائرة
+                            size: 26,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  // زر الرجوع للخلف (تم إضافته على اليسار بنفس الهيكل والأنماط)
+                  if (!_isFullScreen)
+                    Positioned(
+                      top: 15,
+                      left: 5,
+                      child: GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: _selectedBgColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: _selectedBgColor.computeLuminance() < 0.5
+                                  ? AppColors.accentGold.withOpacity(0.5)
+                                  : Colors.brown[900]!.withOpacity(0.3),
+                              width: 0.8,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.15),
+                                blurRadius: 5,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            Icons.arrow_back_rounded,
+                            color: _selectedBgColor.computeLuminance() < 0.5
+                                ? AppColors.accentGold
+                                : Colors.brown[900],
+                            size: 26,
                           ),
                         ),
                       ),

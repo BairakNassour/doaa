@@ -6,6 +6,7 @@ import 'package:doaa/view/HomePage.dart';
 import 'package:doaa/view/HomePage/QuranPage.dart';
 import 'package:doaa/view/SettingsPage.dart';
 import 'package:doaa/view/SupplicationsPage.dart';
+import 'package:doaa/view/friday/HomePageFriday.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -30,6 +31,7 @@ class _MainWrapperState extends State<MainWrapper> {
     HomePage(),
     SupplicationsPage(),
     QuranPage(),
+    FridayMainPage(),
     SettingsPage(),
   ];
 
@@ -178,7 +180,8 @@ class _MainWrapperState extends State<MainWrapper> {
                 _buildNavItem(Icons.home_filled, 'الرئيسية'.tr, 0),
                 _buildNavItem(Icons.menu_book, 'أدعية'.tr, 1),
                 _buildNavItem(Icons.book, 'القرآن'.tr, 2),
-                _buildNavItem(Icons.settings, 'إعدادات'.tr, 3),
+                _buildNavItem(Icons.calendar_month, 'الجمعة'.tr, 3),
+                _buildNavItem(Icons.settings, 'إعدادات'.tr, 4),
               ],
             ),
           ),

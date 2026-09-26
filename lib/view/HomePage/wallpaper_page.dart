@@ -123,7 +123,7 @@ class WallpaperPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
+            icon:  Icon(Icons.arrow_back_ios_new, color: AppColors.accentGold, size: 20),
             onPressed: () => Get.back(),
           ),
           Column(

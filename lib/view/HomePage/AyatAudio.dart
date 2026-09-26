@@ -29,7 +29,7 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
   int _currentIndex = 0;
   bool _isPlaying = false;
   bool _isLoading = true;
-  bool _isRepeatMode = false; 
+  bool _isRepeatMode = false;
 
   Duration _duration = Duration.zero;
   Duration _position = Duration.zero;
@@ -39,7 +39,8 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
   bool _isBannerAdLoaded = false;
   InterstitialAd? _interstitialAd;
   bool _isInterstitialAdLoaded = false;
-  bool _hasShownInterstitialInSession = false; // التحكم بالظهور لمرة واحدة بالجلسة
+  bool _hasShownInterstitialInSession =
+      false; // التحكم بالظهور لمرة واحدة بالجلسة
 
   // معرفات الإعلانات التجريبية للاختبار
 
@@ -48,17 +49,17 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
     {
       "identifier": "ar.alafasy",
       "name": "القارئ مشاري العفاسي",
-      "image": "assets/mashari.jpg"
+      "image": "assets/mashari.jpg",
     },
     {
       "identifier": "ar.abdulsamad",
       "name": "الشيخ عبد الباسط عبد الصمد",
-      "image": "assets/abdalbaset.webp"
+      "image": "assets/abdalbaset.webp",
     },
     {
       "identifier": "ar.minshawi",
       "name": "الشيخ محمد صديق المنشاوي",
-      "image": "assets/almanshawi.webp"
+      "image": "assets/almanshawi.webp",
     },
   ];
 
@@ -67,8 +68,8 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
   @override
   void initState() {
     super.initState();
-    _selectedReciter = _reciters[0]; 
-    _initAudioContext(); 
+    _selectedReciter = _reciters[0];
+    _initAudioContext();
     _setupAudioListeners();
     _loadInitialData();
 
@@ -119,7 +120,10 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
 
   // 🔥 دالة فحص وعرض الإعلان البيني لمرة واحدة فقط عند التغيير
   void _showInterstitialAdWithCallback(VoidCallback onAdClosed) {
-    if (_hasShownInterstitialInSession || !isadactivitaed || !_isInterstitialAdLoaded || _interstitialAd == null) {
+    if (_hasShownInterstitialInSession ||
+        !isadactivitaed ||
+        !_isInterstitialAdLoaded ||
+        _interstitialAd == null) {
       onAdClosed();
       return;
     }
@@ -127,7 +131,8 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
     _interstitialAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
-        _hasShownInterstitialInSession = true; // وضع علامة أنه تم العرض في هذه الجلسة
+        _hasShownInterstitialInSession =
+            true; // وضع علامة أنه تم العرض في هذه الجلسة
         _loadInterstitialAd(); // تحميل إعلان احتياطي
         onAdClosed();
       },
@@ -143,7 +148,7 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
   Future<void> _initAudioContext() async {
     await _audioPlayer.setReleaseMode(ReleaseMode.stop);
     await _audioPlayer.setPlayerMode(PlayerMode.mediaPlayer);
-    
+
     final AudioContext audioContext = AudioContext(
       iOS: AudioContextIOS(
         category: AVAudioSessionCategory.playback,
@@ -153,8 +158,8 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
         },
       ),
       android: AudioContextAndroid(
-        stayAwake: true, 
-        audioFocus: AndroidAudioFocus.gain, 
+        stayAwake: true,
+        audioFocus: AndroidAudioFocus.gain,
         contentType: AndroidContentType.music,
         usageType: AndroidUsageType.media,
         audioMode: AndroidAudioMode.normal,
@@ -187,8 +192,9 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
   }
 
   void _playNextSurah() {
-    int nextSurahIndex = _allSurahs.indexWhere((s) => s.number == _currentSurahNumber) + 1;
-    
+    int nextSurahIndex =
+        _allSurahs.indexWhere((s) => s.number == _currentSurahNumber) + 1;
+
     if (nextSurahIndex < _allSurahs.length) {
       setState(() {
         _currentSurahNumber = _allSurahs[nextSurahIndex].number;
@@ -277,12 +283,17 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
               children: [
                 Text(
                   "اختر القارئ",
-                  style: GoogleFonts.amiri(color: AppColors.accentGold, fontSize: 20, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.amiri(
+                    color: AppColors.accentGold,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const Divider(color: Colors.white24),
                 const SizedBox(height: 10),
                 ..._reciters.map((reciter) {
-                  bool isSelected = reciter['identifier'] == _selectedReciter['identifier'];
+                  bool isSelected =
+                      reciter['identifier'] == _selectedReciter['identifier'];
                   return ListTile(
                     leading: CircleAvatar(
                       backgroundImage: AssetImage(reciter['image']!),
@@ -290,21 +301,30 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
                     title: Text(
                       reciter['name']!,
                       style: GoogleFonts.amiri(
-                        color: isSelected ? AppColors.accentGold : AppColors.textWhite,
+                        color: isSelected
+                            ? AppColors.accentGold
+                            : AppColors.textWhite,
                         fontSize: 18,
                       ),
                     ),
-                    trailing: isSelected ? Icon(Icons.check_circle, color: AppColors.accentGold) : null,
+                    trailing: isSelected
+                        ? Icon(Icons.check_circle, color: AppColors.accentGold)
+                        : null,
                     onTap: () async {
                       Navigator.pop(context);
-                      
+
                       // 🔥 استدعاء الإعلان البيني عند تغيير القارئ (يظهر مرة واحدة في الجلسة)
                       _showInterstitialAdWithCallback(() async {
                         setState(() {
-                          _selectedReciter = reciter; 
+                          _selectedReciter = reciter;
                         });
-                        await _controller.updateSelectedReciter(reciter['identifier']!);
-                        _loadSurahAudio(_currentSurahNumber, autoPlay: _isPlaying);
+                        await _controller.updateSelectedReciter(
+                          reciter['identifier']!,
+                        );
+                        _loadSurahAudio(
+                          _currentSurahNumber,
+                          autoPlay: _isPlaying,
+                        );
                       });
                     },
                   );
@@ -335,21 +355,38 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           centerTitle: true,
-          iconTheme: IconThemeData(color: AppColors.accentGold),
+          // زر الرجوع للخلف على اليسار
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_rounded),
+            color: AppColors.accentGold,
+            tooltip: "رجوع",
+            onPressed: () => Navigator.of(context).pop(),
+          ),
           title: Text(
             _currentSurahName,
-            style: GoogleFonts.amiriQuran(color: AppColors.accentGold, fontSize: 22),
+            style: GoogleFonts.amiriQuran(
+              color: AppColors.accentGold,
+              fontSize: 22,
+            ),
           ),
           actions: [
+            // زر اختيار القارئ
             IconButton(
-              icon: Icon(Icons.record_voice_over_rounded, color: AppColors.accentGold),
+              icon: Icon(
+                Icons.record_voice_over_rounded,
+                color: AppColors.accentGold,
+              ),
               tooltip: "تغيير القارئ",
               onPressed: _showReciterSelection,
             ),
+            // زر فتح المنيو (الدرور) على اليمين
+            
           ],
         ),
         body: _isLoading
-            ? Center(child: CircularProgressIndicator(color: AppColors.accentGold))
+            ? Center(
+                child: CircularProgressIndicator(color: AppColors.accentGold),
+              )
             : Column(
                 children: [
                   const SizedBox(height: 10),
@@ -361,9 +398,12 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
                           height: 140,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.accentGold, width: 2),
+                            border: Border.all(
+                              color: AppColors.accentGold,
+                              width: 2,
+                            ),
                             image: DecorationImage(
-                              image: AssetImage(_selectedReciter['image']!), 
+                              image: AssetImage(_selectedReciter['image']!),
                               fit: BoxFit.cover,
                             ),
                             boxShadow: [
@@ -371,13 +411,13 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
                                 color: AppColors.accentGold.withOpacity(0.3),
                                 blurRadius: 15,
                                 spreadRadius: 2,
-                              )
+                              ),
                             ],
                           ),
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          _selectedReciter['name']!, 
+                          _selectedReciter['name']!,
                           style: GoogleFonts.amiri(
                             color: AppColors.accentGold,
                             fontSize: 18,
@@ -387,22 +427,28 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
                       ],
                     ),
                   ),
-      
+
                   const SizedBox(height: 20),
-      
+
                   Expanded(
                     child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: AppColors.primaryDark.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: AppColors.accentGold.withOpacity(0.5), width: 1.5),
+                        border: Border.all(
+                          color: AppColors.accentGold.withOpacity(0.5),
+                          width: 1.5,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.accentGold.withOpacity(0.05),
                             blurRadius: 10,
-                          )
+                          ),
                         ],
                       ),
                       alignment: Alignment.center,
@@ -420,9 +466,9 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
                       ),
                     ),
                   ),
-      
+
                   _buildPlayerControls(),
-                  
+
                   // 🔥 إضافة إعلان البانر في أسفل الصفحة تماماً وبطريقة احترافية
                   if (_isBannerAdLoaded && _bannerAd != null)
                     SafeArea(
@@ -442,7 +488,12 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
 
   Widget _buildPlayerControls() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 15), // تم تعديل البادينغ ليتناسب مع البانر بالأسفل
+      padding: const EdgeInsets.fromLTRB(
+        20,
+        10,
+        20,
+        15,
+      ), // تم تعديل البادينغ ليتناسب مع البانر بالأسفل
       decoration: BoxDecoration(
         color: AppColors.primaryDark.withOpacity(0.8),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
@@ -461,9 +512,10 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
             child: Slider(
               min: 0,
               max: _duration.inMilliseconds.toDouble(),
-              value: _position.inMilliseconds
-                  .toDouble()
-                  .clamp(0, _duration.inMilliseconds.toDouble()),
+              value: _position.inMilliseconds.toDouble().clamp(
+                0,
+                _duration.inMilliseconds.toDouble(),
+              ),
               onChanged: (value) async {
                 final position = Duration(milliseconds: value.toInt());
                 await _audioPlayer.seek(position);
@@ -475,10 +527,14 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(_formatDuration(_position),
-                    style: TextStyle(color: AppColors.textWhite, fontSize: 12)),
-                Text(_formatDuration(_duration),
-                    style: TextStyle(color: AppColors.textWhite, fontSize: 12)),
+                Text(
+                  _formatDuration(_position),
+                  style: TextStyle(color: AppColors.textWhite, fontSize: 12),
+                ),
+                Text(
+                  _formatDuration(_duration),
+                  style: TextStyle(color: AppColors.textWhite, fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -489,41 +545,58 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
               IconButton(
                 tooltip: "تكرار السورة",
                 icon: Icon(
-                  _isRepeatMode ? Icons.repeat_on_rounded : Icons.repeat_rounded,
-                  color: _isRepeatMode ? AppColors.accentGold : AppColors.textWhite,
+                  _isRepeatMode
+                      ? Icons.repeat_on_rounded
+                      : Icons.repeat_rounded,
+                  color: _isRepeatMode
+                      ? AppColors.accentGold
+                      : AppColors.textWhite,
                 ),
                 onPressed: () => setState(() => _isRepeatMode = !_isRepeatMode),
               ),
-    
+
               IconButton(
-                icon: Icon(Icons.skip_previous_rounded,
-                    size: 40, color: AppColors.textWhite),
+                icon: Icon(
+                  Icons.skip_previous_rounded,
+                  size: 40,
+                  color: AppColors.textWhite,
+                ),
                 onPressed: _playPrevious,
               ),
-    
+
               GestureDetector(
                 onTap: _togglePlay,
                 child: Container(
                   padding: const EdgeInsets.all(15),
                   decoration: BoxDecoration(
-                      color: AppColors.accentGold, shape: BoxShape.circle),
-                  child: Icon(_isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                      size: 40, color: AppColors.primaryDark),
+                    color: AppColors.accentGold,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    size: 40,
+                    color: AppColors.primaryDark,
+                  ),
                 ),
               ),
-    
+
               IconButton(
-                icon: Icon(Icons.skip_next_rounded,
-                    size: 40, color: AppColors.textWhite),
+                icon: Icon(
+                  Icons.skip_next_rounded,
+                  size: 40,
+                  color: AppColors.textWhite,
+                ),
                 onPressed: _playNext,
               ),
-    
-              Builder(builder: (context) {
-                return IconButton(
-                  icon: Icon(Icons.list_rounded, color: AppColors.textWhite),
-                  onPressed: () => Scaffold.of(context).openDrawer(),
-                );
-              }),
+
+              Builder(
+                builder: (context) {
+                  return IconButton(
+                    icon: Icon(Icons.list_rounded, color: AppColors.textWhite),
+                    onPressed: () => Scaffold.of(context).openDrawer(),
+                  );
+                },
+              ),
             ],
           ),
         ],
@@ -548,7 +621,10 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
             child: Center(
               child: Text(
                 "فهرس السور".tr,
-                style: GoogleFonts.amiriQuran(color: AppColors.accentGold, fontSize: 24),
+                style: GoogleFonts.amiriQuran(
+                  color: AppColors.accentGold,
+                  fontSize: 24,
+                ),
               ),
             ),
           ),
@@ -569,7 +645,7 @@ class _AudioPlayerPageState extends State<AudioPlayerPage> {
                 ),
                 onTap: () {
                   Navigator.pop(context);
-                  
+
                   // 🔥 استدعاء الإعلان البيني عند الانتقال لسورة أخرى من القائمة (يظهر مرة واحدة في الجلسة)
                   _showInterstitialAdWithCallback(() {
                     setState(() {

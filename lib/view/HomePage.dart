@@ -13,6 +13,7 @@ import 'package:doaa/view/HomePage/QiblaPage.dart';
 import 'package:doaa/view/HomePage/QuranPage.dart';
 import 'package:doaa/view/HomePage/TasbihPage.dart';
 import 'package:doaa/view/HomePage/UmrahDetailsPage.dart';
+import 'package:doaa/view/HomePage/ZakatCalculatorPage.dart';
 import 'package:doaa/view/HomePage/wallpaper_page.dart';
 import 'package:doaa/view/ManasikPage.dart';
 import 'package:doaa/view/dua_flip_view.dart';
@@ -525,7 +526,13 @@ class _HomePageState extends State<HomePage> {
                   MaterialPageRoute(builder: (context) => AudioPlayerPage()),
                 );
               }),
-              _glassItem(Icons.fingerprint_rounded, 'المسبحة', () {
+              _glassItem(Icons.calculate_rounded, 'الذكاة', () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => ZakatCalculatorPage()),
+                );
+              }),
+               _glassItem(Icons.fingerprint_rounded, 'المسبحة', () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => TasbihPage()),
