@@ -1,48 +1,32 @@
 import 'package:doaa/auth/splachScreen.dart'; 
-import 'package:doaa/component/app_colors.dart';
+import 'package:doaa/controller/AppLaunchController.dart';
 import 'package:doaa/tranlsation/app_translations.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-
-  final prefs = await SharedPreferences.getInstance();
-   print(prefs.getBool('is_dark_mode'));
-  // --- قراءة الثيم المحفوظ (تأكد من اسم المفتاح المناسب) ---
-  final bool isDarkMode = prefs.getBool('is_dark_mode') ?? true;
-
-  // --- قراءة اللغة المحفوظة ---
-  String? savedLang = prefs.getString('selected_lang');
-  Locale initialLocale = savedLang != null 
-      ? Locale(savedLang) 
-      : Get.deviceLocale ?? const Locale('ar'); 
-  
-  runApp(FaseehApp(isDarkMode: isDarkMode, initialLocale: initialLocale)); 
+  runApp(const FaseehApp()); 
 }
 
 class FaseehApp extends StatelessWidget {
-  final bool isDarkMode;
-  final Locale initialLocale; 
-  
-  const FaseehApp({super.key, required this.isDarkMode, required this.initialLocale});
+  const FaseehApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     const String myFont = 'MyCustomFont'; 
+    // تهيئة الـ Controller لجلب القيم والتحكم بها من أي مكان في التطبيق
+    final AppLaunchController launchController = Get.put(AppLaunchController());
 
-    return GetMaterialApp(
+    return Obx(() => GetMaterialApp(
       title: 'دعاء العمرة دليل المسلم',
       debugShowCheckedModeBanner: false,
 
       translations: AppTranslations(), 
-      locale: initialLocale,           
+      locale: launchController.currentLocale.value,          
       fallbackLocale: const Locale('ar'), 
 
-      // ✅ تحديد mode مباشرة وحاسمة
-      themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light, 
+      themeMode: launchController.isDarkMode.value ? ThemeMode.dark : ThemeMode.light, 
       
       // --- الثيم الفاتح ---
       theme: ThemeData(
@@ -79,6 +63,6 @@ class FaseehApp extends StatelessWidget {
       ),
 
       home: WelcomeScreen(), 
-    );
+    ));
   }
 }

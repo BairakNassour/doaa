@@ -225,7 +225,7 @@ class _TasbihPageState extends State<TasbihPage>
       int difference = now.difference(_lastTapTime!).inMilliseconds;
       
       // ⚠️ رفع الحد الزمني إلى 350 ملي ثانية ل_startBlockCountdownلحظر حتى مع الضغط الأبطأ قليلاً
-      if (difference < 200) {
+      if (difference < 100) {
         ();
         return;
       }

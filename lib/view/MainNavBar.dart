@@ -7,6 +7,7 @@ import 'package:doaa/view/HomePage/QuranPage.dart';
 import 'package:doaa/view/SettingsPage.dart';
 import 'package:doaa/view/SupplicationsPage.dart';
 import 'package:doaa/view/friday/HomePageFriday.dart';
+import 'package:doaa/view/hisn/hisn_main_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -19,52 +20,102 @@ class MainWrapper extends StatefulWidget {
   State<MainWrapper> createState() => _MainWrapperState();
 }
 
-class _MainWrapperState extends State<MainWrapper> {
+class _MainWrapperState extends State<MainWrapper> with WidgetsBindingObserver {
   int _selectedIndex = 0;
 
   // إعدادات إعلان فتح التطبيق (App Open Ad)
   AppOpenAd? _appOpenAd;
   bool _isAdLoaded = false;
-  bool _hasShownAppOpenAd = false; // لمنع تكرار الإعلان خلال نفس الجلسة
+  bool _isAdLoading = false;
+  bool _isShowingAd = false; // لمنع تداخل الشاشات أثناء عرض الإعلان
+  
+  // متغير لحفظ وقت آخر ظهور للإعلان
+  DateTime? _lastAdShownTime;
 
   final List<Widget> _pages = [
     HomePage(),
     SupplicationsPage(),
     QuranPage(),
     FridayMainPage(),
+    HisnMainPage(),
     SettingsPage(),
   ];
 
   @override
   void initState() {
     super.initState();
+    // تسجيل مراقب حالة التطبيق (Foreground / Background)
+    WidgetsBinding.instance.addObserver(this);
     
-    // تحميل إعلان الفتح وعرضه فقط إذا كانت الإعلانات مفعلة
+    // تحميل وعرض الإعلان عند فتح التطبيق لأول مرة
     if (isadactivitaed) {
-      _loadAppOpenAd();
+      _loadAppOpenAd(showImmediately: true);
     }
   }
 
-  // دالة تحميل إعلان فتح التطبيق وعرضه لمرة واحدة
-  void _loadAppOpenAd() {
+  @override
+  void dispose() {
+    // إزالة مراقب الحالة والتخلص من الإعلان
+    WidgetsBinding.instance.removeObserver(this);
+    _appOpenAd?.dispose();
+    super.dispose();
+  }
+
+  // الاستماع لتغيرات حالة التطبيق (الخروج للرئيسية والعودة)
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && isadactivitaed) {
+      // التحقق مما إذا مرت 5 دقائق منذ آخر عرض للإعلان
+      if (_shouldShowAd()) {
+        if (_isAdLoaded && _appOpenAd != null) {
+          _showAdOnAppOpen();
+        } else {
+          _loadAppOpenAd(showImmediately: true);
+        }
+      }
+    }
+  }
+
+  // دالة التحقق من شرط الـ 5 دقائق
+  bool _shouldShowAd() {
+    if (_lastAdShownTime == null) return true;
+    final difference = DateTime.now().difference(_lastAdShownTime!);
+    return difference.inMinutes >= 5;
+  }
+
+  // دالة تحميل إعلان فتح التطبيق
+  void _loadAppOpenAd({bool showImmediately = false}) {
+    if (_isAdLoading || _appOpenAd != null || _isShowingAd) return;
+
+    _isAdLoading = true;
+
     AppOpenAd.load(
-      adUnitId: AdHelper.appOpenAdUnitId, // معرف تجريبي لـ App Open Ad من جوجل
+      adUnitId: AdHelper.appOpenAdUnitId,
       request: const AdRequest(),
       adLoadCallback: AppOpenAdLoadCallback(
         onAdLoaded: (ad) {
-          if (!mounted) return;
+          if (!mounted) {
+            ad.dispose();
+            return;
+          }
           setState(() {
             _appOpenAd = ad;
             _isAdLoaded = true;
+            _isAdLoading = false;
           });
 
-          // عرض الإعلان مباشرة عند أول فتح للمرحلة/التطبيق
-          _showAdOnAppOpen();
+          if (showImmediately && _shouldShowAd()) {
+            _showAdOnAppOpen();
+          }
         },
         onAdFailedToLoad: (error) {
           debugPrint('فشل تحميل إعلان فتح التطبيق: $error');
-          _isAdLoaded = false;
-          _appOpenAd = null;
+          if (!mounted) return;
+          setState(() {
+            _isAdLoaded = false;
+            _isAdLoading = false;
+            _appOpenAd = null;
+          });
         },
       ),
     );
@@ -72,19 +123,24 @@ class _MainWrapperState extends State<MainWrapper> {
 
   // دالة إظهار إعلان فتح التطبيق
   void _showAdOnAppOpen() {
-    if (!_hasShownAppOpenAd && _appOpenAd != null) {
-      _hasShownAppOpenAd = true;
+    if (_appOpenAd != null && !_isShowingAd) {
+      _isShowingAd = true;
 
       _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
         onAdDismissedFullScreenContent: (ad) {
           ad.dispose();
           _appOpenAd = null;
           _isAdLoaded = false;
+          _isShowingAd = false;
+          _lastAdShownTime = DateTime.now(); // تحديث وقت آخر ظهور
+          _loadAppOpenAd(); // إعادة التحميل مسبقاً للمرة القادمة
         },
         onAdFailedToShowFullScreenContent: (ad, error) {
           ad.dispose();
           _appOpenAd = null;
           _isAdLoaded = false;
+          _isShowingAd = false;
+          _loadAppOpenAd();
         },
       );
 
@@ -124,7 +180,7 @@ class _MainWrapperState extends State<MainWrapper> {
             ),
             onPressed: () {
               Navigator.of(context).pop();
-              SystemNavigator.pop(); // الخروج المباشر دون إعلانات
+              SystemNavigator.pop();
             },
             child: Text(
               'خروج'.tr,
@@ -134,12 +190,6 @@ class _MainWrapperState extends State<MainWrapper> {
         ],
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _appOpenAd?.dispose();
-    super.dispose();
   }
 
   @override
@@ -181,7 +231,8 @@ class _MainWrapperState extends State<MainWrapper> {
                 _buildNavItem(Icons.menu_book, 'أدعية'.tr, 1),
                 _buildNavItem(Icons.book, 'القرآن'.tr, 2),
                 _buildNavItem(Icons.calendar_month, 'الجمعة'.tr, 3),
-                _buildNavItem(Icons.settings, 'إعدادات'.tr, 4),
+                _buildNavItem(Icons.wallet_giftcard_outlined, 'حصن المسلم'.tr, 4),
+                _buildNavItem(Icons.settings, 'إعدادات'.tr, 5),
               ],
             ),
           ),

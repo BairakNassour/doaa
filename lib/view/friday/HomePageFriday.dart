@@ -7,10 +7,31 @@ import 'package:doaa/view/friday/AnswerHourPage.dart';
 import 'package:doaa/view/friday/FridayDuasPage.dart';
 import 'package:doaa/view/friday/FridayHadithPage.dart';
 import 'package:doaa/view/friday/FridaySunnahPage.dart';
+import 'package:doaa/view/friday/surah_kahf_page.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+
+// نموذج بيانات لعناصر الشبكة
+class FridayGridItem {
+  final String title;
+  final String subtitle;
+  final String iconAsset; // مسار الصورة
+  final IconData fallbackIcon; // أيقونة احتياطية
+  final VoidCallback onTap;
+  final Widget? extraContent; // محتوى إضافي مثل شريط التقدم
+
+  FridayGridItem({
+    required this.title,
+    required this.subtitle,
+    required this.iconAsset,
+    required this.fallbackIcon,
+    required this.onTap,
+    this.extraContent,
+  });
+}
 
 class FridayMainPage extends StatefulWidget {
   const FridayMainPage({super.key});
@@ -20,15 +41,13 @@ class FridayMainPage extends StatefulWidget {
 }
 
 class _FridayMainPageState extends State<FridayMainPage> {
-  // 1. عداد الصلاة على النبي يبدأ من الصفر
+  // العدادات والبيانات
   int _salawatCount = 0;
   final int _salawatTarget = 1000;
-
-  // إكمال السنن (0 من 7)
   final int _completedSunnahs = 0;
   final int _totalSunnahs = 7;
 
-  // 2. التحقق هل اليوم هو الجمعة
+  // التحقق من اليوم
   bool get _isTodayFriday => DateTime.now().weekday == DateTime.friday;
 
   // مشغل الصوت
@@ -37,75 +56,227 @@ class _FridayMainPageState extends State<FridayMainPage> {
   int _currentPlayingIndex = 0;
   List<String> _audioUrls = [];
 
+  // قائمة عناصر الشبكة (سيتم تعريفه داخل build لاستخدام setState)
+  late List<FridayGridItem> _gridItems;
+
   @override
   void dispose() {
     _audioPlayer.dispose();
     super.dispose();
   }
 
+void _onKahfTap() {
+  Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const SurahKahfPage()),
+  );
+}
+
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        backgroundColor: AppColors.secondaryDark,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          centerTitle: true,
-          title: Text(
-            "قسم يوم الجمعة".tr,
-            style: TextStyle(
-              color: AppColors.textWhite,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(15),
-          child: Column(
-            children: [
-              // 1. بطاقة العد التنازلي للجمعة
-              _buildCountdownCard(),
-              const SizedBox(height: 15),
+    // تحديد تدرج الخلفية العلوية (داكن/فاتح)
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final headerGradient = isDarkMode
+        ? const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF1E3A2F), Color(0xFF2C5E4A)],
+          )
+        : const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF2C5E4A), Color(0xFF3F8F6E)],
+          );
 
-              // 2. القفل لبقية الأيام (يفتح يوم الجمعة فقط)
-              if (_isTodayFriday)
-                _buildNotFridayMessage()
-              else ...[
-                Row(
-                  children: [
-                    Expanded(child: _buildSalawatCard()),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildKahfCard()),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(child: _buildDuaCard()),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildAnswerHourCard()),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(child: _buildSunnahCard()),
-                    const SizedBox(width: 12),
-                    Expanded(child: _buildHadithCard()),
-                  ],
-                ),
-              ],
+    // تحديث شريط التقدم للصلاة على النبي
+    double salawatProgress = (_salawatCount / _salawatTarget).clamp(0.0, 1.0);
 
-              const SizedBox(height: 25),
-              const Text(
-                "✿ ✿ ✿",
-                style: TextStyle(color: Color(0xFFC0A080), fontSize: 22),
+    // تعريف عناصر الشبكة هنا لتحديث العدادات
+    _gridItems = [
+      FridayGridItem(
+        title: "سورة الكهف",
+        subtitle: "قراءة واستماع",
+        iconAsset: "assets/quranremeber.png", // ستحتاج لإضافة هذه الصورة
+        fallbackIcon: Icons.menu_book_rounded,
+        onTap: _onKahfTap,
+      ),
+      FridayGridItem(
+        title: "الصلاة على النبي",
+        subtitle: "$_salawatCount / $_salawatTarget",
+        iconAsset: "assets/kaba.png", // ستحتاج لإضافة هذه الصورة
+        fallbackIcon: Icons.volunteer_activism_rounded,
+        onTap: () {
+          setState(() {
+            _salawatCount++;
+          });
+          HapticFeedback.lightImpact();
+        },
+        extraContent: Column(
+          children: [
+            const SizedBox(height: 8),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: salawatProgress,
+                backgroundColor: AppColors.secondaryDark,
+                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFC0A080)),
+                minHeight: 6,
               ),
-              const SizedBox(height: 15),
+            ),
+          ],
+        ),
+      ),
+      FridayGridItem(
+        title: "أدعية الجمعة",
+        subtitle: "دعاء مميز كل جمعة",
+        iconAsset: "assets/doaa.png", // ستحتاج لإضافة هذه الصورة
+        fallbackIcon: Icons.handshake_outlined,
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => FridayDuasPage()));
+        },
+      ),
+      FridayGridItem(
+        title: "ساعة الإجابة",
+        subtitle: "وقت يُرجى فيه إجابة الدعاء",
+        iconAsset: "assets/clock.png", // ستحتاج لإضافة هذه الصورة
+        fallbackIcon: Icons.access_time_filled_rounded,
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => AnswerHourPage()));
+        },
+      ),
+      FridayGridItem(
+        title: "سنن وآداب الجمعة",
+        subtitle: "$_completedSunnahs / $_totalSunnahs مكتملة",
+        iconAsset: "assets/sonah.png", // ستحتاج لإضافة هذه الصورة
+        fallbackIcon: Icons.check_box_outlined,
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const FridaySunnahPage()));
+        },
+      ),
+      FridayGridItem(
+        title: "حديث الجمعة",
+        subtitle: "حديث صحيح جديد",
+        iconAsset: "assets/hadith.png", // ستحتاج لإضافة هذه الصورة
+        fallbackIcon: Icons.format_quote_rounded,
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const FridayHadithPage()));
+        },
+      ),
+    ];
+
+    return Scaffold(
+      backgroundColor: AppColors.secondaryDark,
+      body: Stack(
+        children: [
+          // 1. الخلفية العلوية المرسومة (من الصورة)
+          Container(
+            height: 280,
+            decoration: BoxDecoration(
+              gradient: headerGradient,
+            ),
+            // ضع صورة الخلفية هنا عند توفرها:
+            // child: Image.asset('assets/images/friday_header.png', fit: BoxFit.cover),
+          ),
+
+          // 2. المحتوى (AppBar + القائمة)
+          CustomScrollView(
+            slivers: [
+              // الـ App Bar الشفاف
+              SliverAppBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                floating: true,
+                centerTitle: true,
+                title: Text(
+                  "يوم الجمعة".tr, // تم تغيير الاسم ليطابق الصورة
+                  style: TextStyle(
+                    color: AppColors.textWhite,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                leading: IconButton(
+                  icon: Icon(Icons.mosque, color: AppColors.textWhite),
+                  onPressed: () {}, // أي إجراء تريده
+                ),
+              ),
+
+              // نص ترحيبي علوي
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Column(
+                    children: [
+                      Text(
+                        "برنامجك الكامل لليوم المبارك",
+                        style: TextStyle(
+                          color: AppColors.textWhite.withOpacity(0.9),
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 25),
+                    ],
+                  ),
+                ),
+              ),
+
+              // 3. القائمة ذات الزوايا المنحنية (المحتوى الرئيسي)
+              SliverFillRemaining(
+                hasScrollBody: true,
+                child: Container(
+                  padding: const EdgeInsets.only(top: 15),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryDark,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, -5),
+                      ),
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        // بطاقة العد التنازلي (التي تمتد بعرض الشاشة)
+                        _buildCountdownCard(),
+                        const SizedBox(height: 20),
+
+                        
+                          // الشبكة (Grid) للعناصر الستة (2 في كل صف)
+                          GridView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: _gridItems.length,
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 15,
+                              mainAxisSpacing: 15,
+                              childAspectRatio: 1.1, // لجعلها مربعة تقريباً
+                            ),
+                            itemBuilder: (context, index) {
+                              return _buildGridTile(_gridItems[index]);
+                            },
+                          ),
+
+                        const SizedBox(height: 25),
+                        const Text(
+                          "✿ ✿ ✿",
+                          style: TextStyle(color: Color(0xFFC0A080), fontSize: 22),
+                        ),
+                        const SizedBox(height: 15),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }
@@ -116,17 +287,13 @@ class _FridayMainPageState extends State<FridayMainPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(25),
       decoration: BoxDecoration(
-        color: AppColors.primaryDark,
+        color: AppColors.secondaryDark,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFC0A080).withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFC0A080).withOpacity(0.1)),
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.lock_clock_rounded,
-            color: Color(0xFFC0A080),
-            size: 50,
-          ),
+          const Icon(Icons.lock_clock_rounded, color: Color(0xFFC0A080), size: 50),
           const SizedBox(height: 15),
           Text(
             "قسم يوم الجمعة مغلق الآن",
@@ -150,7 +317,7 @@ class _FridayMainPageState extends State<FridayMainPage> {
     );
   }
 
-  // --- 1. بطاقة العد التنازلي ---
+  // --- بطاقة العد التنازلي ---
   Widget _buildCountdownCard() {
     DateTime now = DateTime.now();
     int daysUntilFriday = (DateTime.friday - now.weekday + 7) % 7;
@@ -160,27 +327,18 @@ class _FridayMainPageState extends State<FridayMainPage> {
       width: double.infinity,
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: AppColors.primaryDark,
+        color: AppColors.secondaryDark,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFC0A080).withOpacity(0.3)),
+        border: Border.all(color: const Color(0xFFC0A080).withOpacity(0.1)),
       ),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.mosque, color: Color(0xFFC0A080), size: 20),
-              const SizedBox(width: 8),
-              Text(
-                _isTodayFriday
-                    ? "جمعة مباركة! اليوم هو يوم الجمعة"
-                    : "الجمعة القادمة بعد",
-                style: TextStyle(
-                  color: AppColors.textWhite.withOpacity(0.8),
-                  fontSize: 14,
-                ),
-              ),
-            ],
+          Text(
+            _isTodayFriday ? "جمعة مباركة! اليوم هو يوم الجمعة" : "الجمعة القادمة بعد",
+            style: TextStyle(
+              color: AppColors.textWhite.withOpacity(0.8),
+              fontSize: 14,
+            ),
           ),
           if (!_isTodayFriday) ...[
             const SizedBox(height: 15),
@@ -233,115 +391,83 @@ class _FridayMainPageState extends State<FridayMainPage> {
     );
   }
 
-  // --- 2. الصلاة على النبي (يبدأ من 0) ---
-  Widget _buildSalawatCard() {
-    double progress = (_salawatCount / _salawatTarget).clamp(0.0, 1.0);
-
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _salawatCount++;
-        });
-        HapticFeedback.lightImpact();
-      },
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(15),
-        height: 160,
-        decoration: BoxDecoration(
-          color: AppColors.primaryDark,
+  // --- بناء بلاطة الشبكة (Grid Tile) بناءً على التصميم الجديد ---
+  Widget _buildGridTile(FridayGridItem item) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.secondaryDark,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFC0A080).withOpacity(0.1)),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: item.onTap,
           borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Icon(
-              Icons.volunteer_activism_rounded,
-              color: Color(0xFFC0A080),
-              size: 30,
-            ),
-            Text(
-              "الصلاة على النبي",
-              style: TextStyle(
-                color: AppColors.textWhite,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Text(
-              "$_salawatCount / $_salawatTarget",
-              style: const TextStyle(
-                color: Colors.greenAccent,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: LinearProgressIndicator(
-                value: progress,
-                backgroundColor: AppColors.secondaryDark,
-                valueColor: const AlwaysStoppedAnimation<Color>(
-                  Color(0xFFC0A080),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // الأيقونة (صورة Asset أو الأيقونة الاحتياطية)
+                Container(
+                  width: 45,
+                  height: 45,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryDark.withOpacity(0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: ClipOval(
+                    child: Center(
+                      child: Image.asset(
+                        item.iconAsset,
+                        width: 50,
+                        height: 50,
+                        // إذا لم يجد الصورة، يعرض الأيقونة الاحتياطية
+                        errorBuilder: (context, error, stackTrace) => Icon(
+                          item.fallbackIcon,
+                          color: const Color(0xFFC0A080),
+                          size: 26,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                minHeight: 6,
-              ),
+                const SizedBox(height: 10),
+
+                // العنوان
+                Text(
+                  item.title,
+                  style: TextStyle(
+                    color: AppColors.textWhite,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 3),
+
+                // العنوان الفرعي
+                Text(
+                  item.subtitle,
+                  style: TextStyle(
+                    color: AppColors.textWhite.withOpacity(0.5),
+                    fontSize: 10,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                // المحتوى الإضافي (مثل شريط التقدم للصلاة على النبي)
+                if (item.extraContent != null) item.extraContent!,
+              ],
             ),
-            Text(
-              "اضغط للزيادة +",
-              style: TextStyle(
-                color: AppColors.textWhite.withOpacity(0.4),
-                fontSize: 10,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  // --- 3. سورة الكهف قراءة وصوت ---
-  Widget _buildKahfCard() {
-    return _buildGridTile(
-      icon: Icons.menu_book_rounded,
-      title: "سورة الكهف",
-      subtitle: "قراءة واستماع",
-      onTap: () async {
-        Get.dialog(
-          const Center(
-            child: CircularProgressIndicator(color: Color(0xFFC0A080)),
-          ),
-          barrierDismissible: false,
-        );
-
-        try {
-          // جلب النص عبر QuranController
-          QuranController quranController = QuranController();
-          List<Ayah> ayahs = await quranController.fetchSurahAyahs(18);
-
-          // جلب الصوتيات المباشرة عبر API القارئ العفاسي لسورة الكهف (18)
-          final audioResponse = await http.get(
-            Uri.parse("https://api.alquran.cloud/v1/surah/18/ar.alafasy"),
-          );
-
-          List<String> urls = [];
-          if (audioResponse.statusCode == 200) {
-            var data = json.decode(audioResponse.body);
-            List ayahsAudio = data['data']['ayahs'];
-            urls = ayahsAudio
-                .map<String>((a) => a['audio'].toString())
-                .toList();
-          }
-
-          Get.back(); // إغلاق التحميل
-          _showKahfBottomSheet(ayahs, urls);
-        } catch (e) {
-          Get.back();
-          Get.snackbar("خطأ", "تعذر التحميل، يرجى الاتصال بالإنترنت.");
-        }
-      },
-    );
-  }
-
+  // --- نافذة سورة الكهف السفلى (كما هي من كودك الأصلي) ---
   void _showKahfBottomSheet(List<Ayah> ayahs, List<String> audioUrls) {
     _audioUrls = audioUrls;
     _currentPlayingIndex = 0;
@@ -373,16 +499,11 @@ class _FridayMainPageState extends State<FridayMainPage> {
 
                   // مشغل الصوت
                   Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 15,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
                     decoration: BoxDecoration(
                       color: AppColors.secondaryDark,
                       borderRadius: BorderRadius.circular(15),
-                      border: Border.all(
-                        color: const Color(0xFFC0A080).withOpacity(0.4),
-                      ),
+                      border: Border.all(color: const Color(0xFFC0A080).withOpacity(0.4)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -390,28 +511,19 @@ class _FridayMainPageState extends State<FridayMainPage> {
                         Row(
                           children: [
                             Icon(
-                              _isPlaying
-                                  ? Icons.volume_up_rounded
-                                  : Icons.volume_off_rounded,
+                              _isPlaying ? Icons.volume_up_rounded : Icons.volume_off_rounded,
                               color: const Color(0xFFC0A080),
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              _isPlaying
-                                  ? "جاري الاستماع للشيخ العفاسي..."
-                                  : "استماع لسورة الكهف",
-                              style: TextStyle(
-                                color: AppColors.textWhite,
-                                fontSize: 13,
-                              ),
+                              _isPlaying ? "جاري الاستماع للشيخ العفاسي..." : "استماع لسورة الكهف",
+                              style: TextStyle(color: AppColors.textWhite, fontSize: 13),
                             ),
                           ],
                         ),
                         IconButton(
                           icon: Icon(
-                            _isPlaying
-                                ? Icons.pause_circle_filled
-                                : Icons.play_circle_fill,
+                            _isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill,
                             color: const Color(0xFFC0A080),
                             size: 38,
                           ),
@@ -430,15 +542,11 @@ class _FridayMainPageState extends State<FridayMainPage> {
                                   _isPlaying = true;
                                 });
 
-                                // التشغيل التلقائي للآية التالية
                                 _audioPlayer.onPlayerComplete.listen((event) {
-                                  if (_currentPlayingIndex <
-                                      _audioUrls.length - 1) {
+                                  if (_currentPlayingIndex < _audioUrls.length - 1) {
                                     _currentPlayingIndex++;
                                     _audioPlayer.play(
-                                      UrlSource(
-                                        _audioUrls[_currentPlayingIndex],
-                                      ),
+                                      UrlSource(_audioUrls[_currentPlayingIndex]),
                                     );
                                   } else {
                                     setModalState(() {
@@ -487,135 +595,5 @@ class _FridayMainPageState extends State<FridayMainPage> {
       _audioPlayer.stop();
       _isPlaying = false;
     });
-  }
-
-  Widget _buildDuaCard() {
-    return _buildGridTile(
-      icon: Icons.handshake_outlined,
-      title: "أدعية الجمعة",
-      subtitle: "دعاء مميز كل جمعة",
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => FridayDuasPage()),
-        );
-      },
-    );
-  }
-
-  Widget _buildAnswerHourCard() {
-    return _buildGridTile(
-      icon: Icons.access_time_filled_rounded,
-      title: "ساعة الإجابة",
-      subtitle: "وقت يُرجى فيه إجابة الدعاء",
-      onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) =>  AnswerHourPage()),
-      );
-    },
-    );
-  }
-
-Widget _buildSunnahCard() {
-  return InkWell(
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const FridaySunnahPage()),
-      );
-    },
-    borderRadius: BorderRadius.circular(20),
-    child: Container(
-      padding: const EdgeInsets.all(15),
-      height: 150,
-      decoration: BoxDecoration(
-        color: AppColors.primaryDark,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.check_box_outlined, color: Color(0xFFC0A080), size: 28),
-          const SizedBox(height: 8),
-          Text(
-            "سنن وآداب الجمعة",
-            style: TextStyle(color: AppColors.textWhite, fontWeight: FontWeight.bold, fontSize: 14),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.greenAccent.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              "$_completedSunnahs / $_totalSunnahs مكتملة",
-              style: const TextStyle(color: Colors.greenAccent, fontSize: 11, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-  Widget _buildHadithCard() {
-  return _buildGridTile(
-    icon: Icons.format_quote_rounded,
-    title: "حديث الجمعة",
-    subtitle: "حديث صحيح جديد",
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const FridayHadithPage()),
-      );
-    },
-  );
-}
-
-  Widget _buildGridTile({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(15),
-        height: 150,
-        decoration: BoxDecoration(
-          color: AppColors.primaryDark,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: const Color(0xFFC0A080), size: 30),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              style: TextStyle(
-                color: AppColors.textWhite,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: AppColors.textWhite.withOpacity(0.5),
-                fontSize: 11,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
